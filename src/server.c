@@ -78,14 +78,16 @@ void process_command(int client_sock, Command *cmd)
     printf("Received command: %d\n", cmd->type);
     printf("Received data: %s\n", cmd->data);
 
-    printf("qui");
-    char response[BUFFER_SIZE] = "";
-
-    memset(response, '\0', sizeof(response));
-    printf("%s", response);
+    fflush(stdout);
+    char response[BUFFER_SIZE] = " ";
 
     // check allowedclients.txt for pid
     int allowed = 0;
+
+    fflush(stdout);
+    printf("Zeb dice: %d\n", (cmd->type == CMD_ADD || cmd->type == CMD_MODIFY || cmd->type == CMD_DELETE));
+    fflush(stdout);
+
 
     if ((cmd->type == CMD_ADD || cmd->type == CMD_MODIFY || cmd->type == CMD_DELETE))
     {    // check allowedclients.txt for pid
@@ -106,8 +108,7 @@ void process_command(int client_sock, Command *cmd)
         }
         if (allowed == 0)//se non ha trovato il pid, è ancora 0
         {
-            strcpy(response, "Authentication required");
-            send_response(client_sock, response);
+            send_response(client_sock, "Authentication required\n");
             return;
         }
     }
@@ -133,16 +134,17 @@ void process_command(int client_sock, Command *cmd)
             fd = fopen("allowedClients.txt", "a");
             fprintf(fd, "%s\n", cmd->pid);
             fclose(fd);
-            strcpy(response, "Authentication successful");
+            //strcpy(response, "Authentication successful\n");
+            send_response(client_sock, "Authentication successful\n");
         }
         else
-            strcpy(response, "Authentication failed");
+            strcpy(response, "Authentication failed\n");
         break;
     case CMD_CLOSE:
-        printf("Closing connection with ");
+        printf("Closing connection.\n");
         break;
     default:
-        strcpy(response, "Unknown command");
+        strcpy(response, "Unknown command\n");
         break;
     }
 
