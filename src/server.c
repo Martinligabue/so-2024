@@ -87,29 +87,29 @@ void process_command(int client_sock, Command *cmd)
     // check allowedclients.txt for pid
     int allowed = 0;
 
-    FILE *fdallow = fopen("allowedClients.txt", "r");
-
-    if (fdallow != NULL)
-    {
-
-        char line[256];
-        while (fgets(line, sizeof(line), fdallow))
+    if ((cmd->type == CMD_ADD || cmd->type == CMD_MODIFY || cmd->type == CMD_DELETE))
+    {    // check allowedclients.txt for pid
+        FILE *fdallow = fopen("allowedClients.txt", "r");
+        if (fdallow != NULL)
         {
-            line[strcspn(line, "\n")] = '\0';
-            if (strcmp(line, cmd->pid) == 0)
+            char line[256];
+            while (fgets(line, sizeof(line), fdallow))
             {
-                allowed = 1;
-                break;
+                line[strcspn(line, "\n")] = '\0';
+                if (strcmp(line, cmd->pid) == 0)
+                {
+                    allowed = 1;
+                    break;
+                }
             }
+            fclose(fdallow);
         }
-        fclose(fdallow);
-    }
-
-    if ((cmd->type == CMD_ADD || cmd->type == CMD_MODIFY || cmd->type == CMD_DELETE) && !allowed)
-    {
-        strcpy(response, "Authentication required");
-        send_response(client_sock, response);
-        return;
+        if (allowed == 0)//se non ha trovato il pid, è ancora 0
+        {
+            strcpy(response, "Authentication required");
+            send_response(client_sock, response);
+            return;
+        }
     }
     // If we are here, we are authenticated, or we don't need to be
     switch (cmd->type)
