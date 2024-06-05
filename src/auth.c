@@ -6,8 +6,8 @@ int authenticate(const char *credentials) {
     // Simple authentication check
     //return strcmp(credentials, "password") == 0;
 
-    FILE *fd; 
-    fd=fopen("passwords.txt", "r");
+    FILE *fd;
+    fd = fopen("res/passwords.txt", "r");
     //search in the file a line identical to credentials
     char line[256];
     while(fgets(line, sizeof(line), fd)){
