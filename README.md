@@ -1,4 +1,4 @@
 # so-2024
 
->[TIP]
+>[!TIP]
 >Visitate il sito in descrizione per programmare bene
