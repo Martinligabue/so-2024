@@ -2,7 +2,10 @@ CC = gcc
 CFLAGS = -Wall -Wextra -pedantic -O0 -g
 OBJDIR := obj
 
-all: server client
+all: create_obj server client
+
+create_obj:
+	mkdir obj
 
 server: $(OBJDIR)/server.o $(OBJDIR)/address_book.o $(OBJDIR)/auth.o
 	$(CC) $(CFLAGS) -o server $(OBJDIR)/server.o $(OBJDIR)/address_book.o $(OBJDIR)/auth.o
