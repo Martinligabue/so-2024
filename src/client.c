@@ -76,13 +76,13 @@ int main() {
         printf("Enter command type:\nQUERY\nADD\nMODIFY\nDELETE\nAUTH\nCLOSE\nEnter choice: ");
         fgets(command, sizeof(command), stdin);
         cmd.type = get_command_type(command);
-        if (cmd.type == CMD_CLOSE || cmd.type == CMD_ERROR) {
+        if (!(cmd.type == CMD_CLOSE || cmd.type == CMD_ERROR)) {
             send_command(sock, &cmd, response);
-            break;
+
+            printf("Enter command data: ");
+            fgets(command, sizeof(command), stdin);
+            command[strcspn(command, "\n")] = 0; // remove \n from the string
         }
-        printf("Enter command data: ");
-        fgets(command, sizeof(command), stdin);
-        command[strcspn(command, "\n")] = 0; // remove \n from the string
         strcpy(cmd.data, command);
         send_command(sock, &cmd, response);
 

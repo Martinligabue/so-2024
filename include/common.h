@@ -6,6 +6,7 @@
 #define MAX_RECORDS 100
 
 typedef struct {
+    int id;
     char name[50];
     char phone[15];
     char address[100];

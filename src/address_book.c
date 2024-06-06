@@ -5,21 +5,21 @@
 
 Record address_book[MAX_RECORDS];
 int record_count = 1;
+int id = 1;
 
-void query_address_book(const char *query, char *response)
-{
+int query_address_book(const char *query, char *response) {
     for (int i = 0; i < record_count; i++) {
         if (strcmp(address_book[i].name, query) == 0) {
             sprintf(response, "Query result: %s, %s, %s\n", address_book[i].name, address_book[i].address,
                     address_book[i].phone);
-            return;
+            return address_book[i].id;
         }
         sprintf(response, "Record not found\n");
     }
+    return -1;
 }
 
-void add_record(const char *record, char *response)
-{
+void add_record(const char *record, char *response) {
     // Check if the address book is full
     if (record_count >= MAX_RECORDS) {
         strcpy(response, "Address book is full");
@@ -42,20 +42,29 @@ void add_record(const char *record, char *response)
     strcpy(address_book[record_count].name, name);
     strcpy(address_book[record_count].address, address);
     strcpy(address_book[record_count].phone, phone);
+    address_book[record_count].id = id++;
     record_count++;
 
     // Write the success message to response
     strcpy(response, "Record added");
 }
 
-void modify_record(const char *record, char *response)
-{
-    // Implementation for modifying a record in the address book
-    strcpy(response, "Record modified");
+void delete_record(const char *record, char *response) {
+    int del = query_address_book(record, response);
+    if (del == -1) {
+        strcpy(response, "Record not found");
+        return;
+    }
+    record_count--;
+    address_book->id = 0;
+    address_book->phone[0] = '\0';
+    address_book->address[0] = '\0';
+    address_book->name[0] = '\0';
+
+    strcpy(response, "Record deleted");
 }
 
-void delete_record(const char *record, char *response)
-{
-    // Implementation for deleting a record from the address book
-    strcpy(response, "Record deleted");
+void modify_record(const char *record, char *response) {
+
+    strcpy(response, "Record modified");
 }
