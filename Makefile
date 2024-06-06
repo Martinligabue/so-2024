@@ -5,7 +5,7 @@ OBJDIR := obj
 all: create_obj server client
 
 create_obj:
-	mkdir obj
+	if [ ! -d "obj" ]; then mkdir obj; fi
 
 server: $(OBJDIR)/server.o $(OBJDIR)/address_book.o $(OBJDIR)/auth.o
 	$(CC) $(CFLAGS) -o server $(OBJDIR)/server.o $(OBJDIR)/address_book.o $(OBJDIR)/auth.o
