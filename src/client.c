@@ -77,16 +77,16 @@ int main() {
         fgets(command, sizeof(command), stdin);
         cmd.type = get_command_type(command);
         if (!(cmd.type == CMD_CLOSE || cmd.type == CMD_ERROR)) {
-            printf("Enter command data: ");
-            fgets(command, sizeof(command), stdin);
-            command[strcspn(command, "\n")] = 0; // remove \n from the string
-            strcpy(cmd.data, command);
             if (cmd.type == CMD_QUERY) {
-                printf("Enter subinstruction: ");
+                printf("nome, cognome o matricola?: ");
                 fgets(command, sizeof(command), stdin);
                 command[strcspn(command, "\n")] = 0; // remove \n from the string
                 strcpy(cmd.subinstruction, command);
             }
+            printf("Enter command data: ");
+            fgets(command, sizeof(command), stdin);
+            command[strcspn(command, "\n")] = 0; // remove \n from the string
+            strcpy(cmd.data, command);
         }
         send_command(sock, &cmd, response);
 

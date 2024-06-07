@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "../include/address_book.h"
 #include "../include/common.h"
@@ -33,7 +34,9 @@ void query_address_book(char *query, char *sub, char *response) {
         } else if (strcmp(sub, "matricola") == 0) {
             if (strcmp(address_book[i].phone, querycopy) == 0)
                 concatenateResults(buffer, buffer2, i, address_book);
-        } else {
+        }/* else if (strcmp(sub, "tutto") == 0) {
+            concatenateResults(buffer, buffer2, i, address_book);
+        } */else {
             sprintf(response, "Invalid subinstruction\n");
             return;
         }
@@ -81,24 +84,45 @@ void add_record(const char *record, char *response) {
     strcpy(response, "Record added");
 }
 
-void delete_record(const char *record, char *response) {
-    /*int del = query_address_book(record, response);
-    if (del == -1)
-    {
-        strcpy(response, "Record not found");
+void delete_record(const char *recordId, char *response) {
+    int del = atoi(recordId);
+    if (del > record_count || del <= 1) {
+        strcpy(response, "Record doesn't exist\n");
         return;
     }
     record_count--;
-    address_book->id = 0;
-    address_book->phone[0] = '\0';
-    address_book->address[0] = '\0';
-    address_book->name[0] = '\0';
-
-    strcpy(response, "Record deleted");*/
+    address_book[del - 1].id = 0;
+    address_book[del - 1].name[0] = '\0';
+    address_book[del - 1].address[0] = '\0';
+    address_book[del - 1].phone[0] = '\0';
+    strcpy(response, "Record deleted");
 }
 
 void modify_record(const char *record, char *response) {
 
+    // Parse the record string
+    char *record_copy = strdup(record); // Make a copy of the record string because strtok modifies the string
+    char *id = strtok(record_copy, ",");
+    char *name = strtok(NULL, ",");
+    char *address = strtok(NULL, ",");
+    char *phone = strtok(NULL, ",");
+
+    // Check if all fields were provided
+    if (name == NULL || address == NULL || phone == NULL) {
+        strcpy(response, "Invalid record format");
+        return;
+    }
+    int idn = atoi(id);
+    if (idn < 0 || idn > record_count) {
+        strcpy(response, "Record doesn't exist\n");
+        return;
+    }
+
+    // Add the new record to the address book
+    address_book[idn - 1].id = idn;
+    strcpy(address_book[idn - 1].name, name);
+    strcpy(address_book[idn - 1].address, address);
+    strcpy(address_book[idn - 1].phone, phone);
     strcpy(response, "Record modified");
 }
 
