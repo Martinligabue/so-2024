@@ -52,7 +52,7 @@ void process_command(int client_sock, Command *cmd) {
     // If we are here, we are authenticated, or we don't need to be
     switch (cmd->type) {
         case CMD_QUERY:
-            query_address_book(cmd->data, response);
+            query_address_book(cmd->data, cmd->subinstruction, response);
             break;
         case CMD_ADD:
             add_record(cmd->data, response);
@@ -80,8 +80,8 @@ void process_command(int client_sock, Command *cmd) {
             strcpy(response, "Unknown command\n");
             break;
     }
-
     send_response(client_sock, response);
+    memset(response, 0, sizeof(response));
 }
 
 void handle_client(int client_sock) {
@@ -97,6 +97,7 @@ int main() {
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
 
+    addDefaults();
 
     // Create socket
     if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {

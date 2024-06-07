@@ -26,6 +26,7 @@ typedef enum {
 typedef struct {
     CommandType type;
     char data[BUFFER_SIZE];
+    char subinstruction[10];
     char pid[10];
 } Command;
 
