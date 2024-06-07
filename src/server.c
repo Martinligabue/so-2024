@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <arpa/inet.h>
 #include <signal.h>
 #include "../include/common.h"
@@ -96,7 +97,7 @@ int main() {
     int server_sock, client_sock;
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
-
+#include <fcntl.h>
     addDefaults(); //add default records to the address book
 
     // Create socket

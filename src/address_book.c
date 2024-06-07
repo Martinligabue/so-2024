@@ -8,6 +8,17 @@ Record address_book[MAX_RECORDS];
 int record_count = 0;
 int id = 1;
 
+int isNumber(char phone[10])
+{
+    for (int i = 0; i < strlen(phone); i++) {
+        if (phone[i] < '0' || phone[i] > '9') {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
 void concatenateResults(char *buffer, char *buffer2, int i, Record *address_book) {
     sprintf(buffer2, "%d: %s, %s, %s\n", address_book[i].id, address_book[i].name, address_book[i].address,
             address_book[i].phone);
@@ -19,6 +30,7 @@ void query_address_book(char *query, char *sub, char *response) {
     char buffer[BUFFER_SIZE];
     char buffer2[BUFFER_SIZE];
     char querycopy[BUFFER_SIZE];
+
     memset(response, 0, BUFFER_SIZE);
 
     strcpy(querycopy, query);
@@ -73,11 +85,10 @@ void add_record(const char *record, char *response) {
         return;
     }
     //check that phone is made of only numbers
-    for (int i = 0; i < strlen(phone); i++) {
-        if (phone[i] < '0' || phone[i] > '9') {
-            strcpy(response, "Invalid student Id");
-            return;
-        }
+    if(isNumber(phone)){
+        strcpy(response, "Invalid student Id");
+        return;
+
     }
 
     // Add the new record to the address book

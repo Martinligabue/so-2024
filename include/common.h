@@ -3,7 +3,7 @@
 
 #define PORT 12345
 
-#define EXTERNAL 1
+#define EXTERNAL 0
 #if EXTERNAL==1
 #define ADDRESS "192.168.110.85" // change this to the server address
 #else
