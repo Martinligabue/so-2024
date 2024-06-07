@@ -2,6 +2,14 @@
 #define COMMON_H
 
 #define PORT 12345
+
+#define EXTERNAL 1
+#if EXTERNAL==1
+#define ADDRESS "192.168.110.85" // change this to the server address
+#else
+#define ADDRESS "127.0.0.1"
+#endif
+
 #define BUFFER_SIZE 1024
 #define MAX_RECORDS 100
 

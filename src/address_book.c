@@ -72,6 +72,13 @@ void add_record(const char *record, char *response) {
         strcpy(response, "Invalid record format");
         return;
     }
+    //check that phone is made of only numbers
+    for (int i = 0; i < strlen(phone); i++) {
+        if (phone[i] < '0' || phone[i] > '9') {
+            strcpy(response, "Invalid student Id");
+            return;
+        }
+    }
 
     // Add the new record to the address book
     strcpy(address_book[record_count].name, name);

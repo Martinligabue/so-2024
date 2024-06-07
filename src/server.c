@@ -97,7 +97,7 @@ int main() {
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
 
-    addDefaults();
+    addDefaults(); //add default records to the address book
 
     // Create socket
     if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -122,7 +122,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
     signal(SIGINT, signal_handler);
-    printf("Server is running on port %d and pid %d ...\n", PORT, getpid());
+    printf("Server is running on %s:%d and pid %d ...\n", ADDRESS, PORT, getpid());
 
     // Accept client connections
     while ((client_sock = accept(server_sock, (struct sockaddr *) &client_addr, &client_len)) > 0)

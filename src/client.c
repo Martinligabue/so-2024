@@ -56,7 +56,7 @@ int main() {
     // Set up server address
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
-    if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, ADDRESS, &server_addr.sin_addr) <= 0) {
         perror("Invalid address/Address not supported");
         close(sock);
         exit(EXIT_FAILURE);
