@@ -61,4 +61,3 @@ int authenticate(char *credentials)
     printf("Not authenticated\n");
     return 0;
 }
-// eventualmente aggiungere ulteriori check, come segnare un user e una password, o addirittura un hash

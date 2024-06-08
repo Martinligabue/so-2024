@@ -17,9 +17,15 @@ Check if a string is a number and if has a correct length.
 */
 int isValidNumber(char studentId[7])
 {
-    for (int i = 0; i < 8; i++)
-        if (studentId[i] < '0' || studentId[i] > '9' || strlen(studentId) != 7)
+    int length = strlen(studentId);
+    if (length != 7)
+        return 1;
+
+    for (int i = 0; i < length; i++)
+    {
+        if (studentId[i] < '0' || studentId[i] > '9')
             return 1;
+    }
     return 0;
 }
 
@@ -30,8 +36,8 @@ int is_unique_student_id(const char *studentId)
 {
     for (int i = 0; i < record_count; i++)
         if (strcmp(address_book[i].studentId, studentId) == 0)
-            return 0;
-    return 1;
+            return 1;
+    return 0;
 }
 
 /*
@@ -42,7 +48,7 @@ void log_change(const char *operation, Record *record)
     FILE *log_file = fopen(CHANGE_LOG, "a");
     if (log_file == NULL)
     {
-        perror("Errore nell'apertura del file di Log!\n");
+        perror("error opening logfile!\n");
         return;
     }
     fprintf(log_file, "Operation: %s, Record ID: %d, Name: %s, Surname: %s, Student ID: %s\n",
@@ -238,7 +244,7 @@ void addDefaults()
     fd = fopen(RUBRICA, "r");
     if (fd == NULL)
     {
-        perror("Errore nell'apertura del file!\n");
+        perror("Error opening file!\n");
         return;
     }
 
@@ -257,9 +263,6 @@ void addDefaults()
         ;
         address_book[record_count].id = id++;
         record_count++;
-        //
-        free(line_copy); // CONTROLLARE SE SERVE DAVVERO!!!!!!!!
-        //
     }
     fclose(fd);
 }
