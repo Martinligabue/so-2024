@@ -5,87 +5,114 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <signal.h>
-#include "../include/common.h"
-#include "../include/address_book.h"
-#include "../include/auth.h"
+#include "../inc/common.h"
+#include "../inc/address_book.h"
+#include "../inc/auth.h"
 
-void send_response(int client_sock, const char *response) {
+/*Sends a response message to the client.*/
+void send_response(int client_sock, const char *response)
+{
     write(client_sock, response, strlen(response));
 }
 
-void signal_handler(int server_sock) {
+/*Signal handler for clean server shutdown.*/
+void signal_handler(int server_sock)
+{
     printf("\nSignal received, closing socket...\n");
     close(server_sock);
     printf("Done! :)\n");
     exit(EXIT_SUCCESS);
 }
 
-void process_command(int client_sock, Command *cmd) {
+/*Checks if a client with a given PID is allowed by reading from allowedClients.txt.
+Returns 1 if allowed, 0 otherwise.*/
+int is_client_allowed(char *pid)
+{
+    FILE *fdAllowedClients = fopen(ALLOWED_CLIENTS_FILE, "r");
+    if (fdAllowedClients == NULL)
+    {
+        perror("Error opening allowedClients.txt");
+        return EXIT_FAILURE;
+    }
 
+    char line[256];
+    int allowed = 0;
+    while (fgets(line, sizeof(line), fdAllowedClients))
+    {
+        line[strcspn(line, "\n")] = '\0';
+        if (strcmp(line, pid) == 0)
+        {
+            allowed = 1;
+            break;
+        }
+    }
+    fclose(fdAllowedClients);
+    return allowed;
+}
+
+/*Processes a single command from the client and sends appropriate responses to the client.*/
+void process_command(int client_sock, Command *cmd)
+{
     printf("Received command: %d\n", cmd->type);
     printf("Received data: %s\n", cmd->data);
 
     char response[BUFFER_SIZE] = {0};
 
     // check allowedclients.txt for pid
-    int allowed = 0;
     fflush(stdout);
-    if ((cmd->type == CMD_ADD || cmd->type == CMD_MODIFY ||
-         cmd->type == CMD_DELETE)) {    // check allowedclients.txt for pid
-        FILE *fdallow = fopen("allowedClients.txt", "r");
-        if (fdallow != NULL) {
-            char line[256];
-            while (fgets(line, sizeof(line), fdallow)) {
-                line[strcspn(line, "\n")] = '\0';
-                if (strcmp(line, cmd->pid) == 0) {
-                    allowed = 1;
-                    break;
-                }
-            }
-            fclose(fdallow);
-        }
-        if (allowed == 0)//se non ha trovato il pid, è ancora 0
+    if ((cmd->type == CMD_ADD || cmd->type == CMD_MODIFY || cmd->type == CMD_DELETE))
+    {
+        if (is_client_allowed(cmd->pid) == 0) // se non ha trovato il pid, è ancora 0
         {
             send_response(client_sock, "Authentication required\n");
             return;
         }
     }
     // If we are here, we are authenticated, or we don't need to be
-    switch (cmd->type) {
-        case CMD_QUERY:
-            query_address_book(cmd->data, cmd->subinstruction, response);
-            break;
-        case CMD_ADD:
-            add_record(cmd->data, response);
-            break;
-        case CMD_MODIFY:
-            modify_record(cmd->data, response);
-            break;
-        case CMD_DELETE:
-            delete_record(cmd->data, response);
-            break;
-        case CMD_AUTH:
-            if (authenticate(cmd->data)) {
-                FILE *fd;
-                fd = fopen("allowedClients.txt", "a");
-                fprintf(fd, "%s\n", cmd->pid);
-                fclose(fd);
-                send_response(client_sock, "Authentication successful\n");
-            } else
-                strcpy(response, "Authentication failed\n");
-            break;
-        case CMD_CLOSE:
-            printf("Closing connection.\n");
-            break;
-        default:
-            strcpy(response, "Unknown command\n");
-            break;
+    switch (cmd->type)
+    {
+    case CMD_QUERY:
+        query_address_book(cmd->data, cmd->subinstruction, response);
+        break;
+    case CMD_ADD:
+        add_record(cmd->data, response);
+        break;
+    case CMD_MODIFY:
+        modify_record(cmd->data, response);
+        break;
+    case CMD_DELETE:
+        delete_record(cmd->data, response);
+        break;
+    case CMD_AUTH:
+        if (authenticate(cmd->data))
+        {
+            FILE *fd = fopen(ALLOWED_CLIENTS_FILE, "a");
+            if (fd == NULL)
+            {
+                perror("Error opening file!\n");
+                return;
+            }
+            fprintf(fd, "%s\n", cmd->pid);
+            fclose(fd);
+            send_response(client_sock, "Authentication successful\n");
+        }
+        else
+            strcpy(response, "Authentication failed\n");
+        break;
+    case CMD_CLOSE:
+        printf("Closing connection.\n");
+        break;
+    default:
+        strcpy(response, "Invalid command.\nPlease enter the correct number.\n");
+        break;
     }
     send_response(client_sock, response);
     memset(response, 0, sizeof(response));
 }
 
-void handle_client(int client_sock) {
+/*Handles communication with a single client */
+void handle_client(int client_sock)
+{
     Command cmd;
     ssize_t bytes_read;
 
@@ -93,41 +120,60 @@ void handle_client(int client_sock) {
         process_command(client_sock, &cmd);
 }
 
-int main() {
-    int server_sock, client_sock;
-    struct sockaddr_in server_addr, client_addr;
-    socklen_t client_len = sizeof(client_addr);
-#include <fcntl.h>
-    addDefaults(); //add default records to the address book
-
-    // Create socket
-    if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+/* Sets up the server socket and binds it to the specified address and port.*/
+void setup_server(int *server_sock, struct sockaddr_in *server_addr)
+{
+    if ((*server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
 
-    // Bind socket to address and port
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(PORT);
-    if (bind(server_sock, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
+    server_addr->sin_family = AF_INET;
+    server_addr->sin_addr.s_addr = INADDR_ANY;
+    server_addr->sin_port = htons(PORT);
+
+    if (bind(*server_sock, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0)
+    {
         perror("Bind failed");
-        close(server_sock);
+        close(*server_sock);
         exit(EXIT_FAILURE);
     }
 
-    // Listen for connections
-    if (listen(server_sock, 5) < 0) {
+    if (listen(*server_sock, 5) < 0)
+    {
         perror("Listen failed");
-        close(server_sock);
+        close(*server_sock);
         exit(EXIT_FAILURE);
     }
+}
+
+/*Accepts client connections in a loop.*/
+void accept_client_connections(int server_sock)
+{
+    int client_sock;
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+
+    while ((client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &client_len)) > 0)
+    {
+        handle_client(client_sock);
+    }
+}
+
+int main()
+{
+    int server_sock;
+    struct sockaddr_in server_addr;
+
+    addDefaults(); // Add default records to the address book
+
+    setup_server(&server_sock, &server_addr);
+
     signal(SIGINT, signal_handler);
     printf("Server is running on %s:%d and pid %d ...\n", ADDRESS, PORT, getpid());
 
-    // Accept client connections
-    while ((client_sock = accept(server_sock, (struct sockaddr *) &client_addr, &client_len)) > 0)
-        handle_client(client_sock);
+    accept_client_connections(server_sock);
 
     close(server_sock);
     return 0;

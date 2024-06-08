@@ -1,31 +1,43 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -pedantic -O0 -g
+
 OBJDIR := obj
+BINDIR := bin
+LOGDIR := log
+INCDIR := inc
 
-all: create_obj server client
+SRC_SERVER := src/server.c
+SRC_CLIENT := src/client.c
+SRC_ADDRESS_BOOK := src/address_book.c
+SRC_AUTH := src/auth.c
 
-create_obj:
-	if [ ! -d "obj" ]; then mkdir obj; fi
+HEADERS := $(INCDIR)/common.h $(INCDIR)/address_book.h $(INCDIR)/auth.h
 
-server: $(OBJDIR)/server.o $(OBJDIR)/address_book.o $(OBJDIR)/auth.o
-	$(CC) $(CFLAGS) -o server $(OBJDIR)/server.o $(OBJDIR)/address_book.o $(OBJDIR)/auth.o
+OBJ_SERVER := $(OBJDIR)/server.o
+OBJ_CLIENT := $(OBJDIR)/client.o
+OBJ_ADDRESS_BOOK := $(OBJDIR)/address_book.o
+OBJ_AUTH := $(OBJDIR)/auth.o
 
-client: $(OBJDIR)/client.o
-	$(CC) $(CFLAGS) -o client $(OBJDIR)/client.o
+all: create_dirs $(BINDIR)/server $(BINDIR)/client
 
-$(OBJDIR)/server.o: src/server.c include/common.h include/address_book.h include/auth.h
-	$(CC) $(CFLAGS) -c -o $(OBJDIR)/server.o src/server.c
+create_dirs:
+	@mkdir -p $(OBJDIR) $(BINDIR) $(LOGDIR)
 
-$(OBJDIR)/client.o: src/client.c include/common.h
-	$(CC) $(CFLAGS) -c -o $(OBJDIR)/client.o src/client.c
+$(BINDIR)/server: $(OBJ_SERVER) $(OBJ_ADDRESS_BOOK) $(OBJ_AUTH)
+	$(CC) $(CFLAGS) -o $@ $^
 
-$(OBJDIR)/address_book.o: src/address_book.c include/address_book.h include/common.h
-	$(CC) $(CFLAGS) -c -o $(OBJDIR)/address_book.o src/address_book.c
+$(BINDIR)/client: $(OBJ_CLIENT)
+	$(CC) $(CFLAGS) -o $@ $^
 
-$(OBJDIR)/auth.o: src/auth.c include/auth.h
-	$(CC) $(CFLAGS) -c -o $(OBJDIR)/auth.o src/auth.c
+$(OBJDIR)/%.o: src/%.c $(HEADERS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(OBJDIR)/*.o server client allowedClients.txt
+	rm -f $(OBJDIR)/*.o
+	rm -f $(BINDIR)/server $(BINDIR)/client
+	rm -f $(LOGDIR)/*
 
-.PHONY: all clean
+run:
+	$(BINDIR)/server
+
+.PHONY: all create_dirs clean run
