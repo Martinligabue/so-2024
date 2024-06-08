@@ -13,11 +13,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-   # - name: configure
-   #   run: ./configure
+    # - name: configure
+    #   run: ./configure
     - name: make
       run: make
-   # - name: make check
-   #   run: make check
-   # - name: make distcheck
-   #   run: make distcheck
+    # - name: make check
+    #   run: make check
+    # - name: make distcheck
+    #   run: make distcheck
+    - name: Upload bin directory
+      id: upload-bin
+      uses: actions/upload-artifact@v2
+      with:
+        name: bin
+        path: bin
