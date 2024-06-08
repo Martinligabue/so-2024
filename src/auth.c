@@ -10,6 +10,17 @@ void remove_newline(char *str)
     str[strcspn(str, "\n")] = '\0';
 }
 
+void simple_hash(const char* s, char* output) {
+    char first_char = s[0];
+
+    int ascii_sum = 0;
+    for (int i = 0; s[i] != '\0'; i++)
+        ascii_sum += s[i];
+
+    sprintf(output, "%c%d", first_char, ascii_sum);
+    return;
+}
+
 /*
 Function to check if credentials exist in the credentials file.
 */
@@ -38,9 +49,10 @@ int read_credentials_file(const char *credentials)
     return 0;
 }
 
-int authenticate(const char *credentials)
+int authenticate(char *credentials)
 {
-
+    simple_hash(credentials, credentials);
+    printf("Hashed credentials: %s\n", credentials);
     if (read_credentials_file(credentials))
     {
         printf("Authenticated\n");

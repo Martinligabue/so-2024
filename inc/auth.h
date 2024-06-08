@@ -5,6 +5,6 @@
 #define ALLOWED_CLIENTS_FILE "log/allowedClients_log.txt"
 #define BUFFER_SIZE 1024
 
-int authenticate(const char *credentials);
+int authenticate(char *credentials);
 
 #endif

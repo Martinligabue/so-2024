@@ -96,8 +96,7 @@ void handle_commands(int sock)
 
     do
     {
-        printf(COMMAND_LIST);
-        get_user_input("", command, sizeof(command));
+        get_user_input(COMMAND_LIST, command, sizeof(command));
         cmd.type = get_command_type(command);
 
         if (cmd.type != CMD_CLOSE && cmd.type != CMD_ERROR)

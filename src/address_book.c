@@ -114,7 +114,7 @@ Add a record to the address book.
 */
 void add_record(const char *record, char *response)
 {
-    // Check if the surname book is full
+    // Check if the address book is full
     if (record_count >= MAX_RECORDS)
     {
         strcpy(response, "Address book is full");
@@ -140,20 +140,12 @@ void add_record(const char *record, char *response)
         return;
     }
 
-    // Add the new record to the surname book
-
     Record new_record = address_book[record_count++];
     new_record.id = id++;
     strcpy(new_record.name, name);
     strcpy(new_record.surname, surname);
     strcpy(new_record.studentId, studentId);
     record_count++;
-
-    /* strcpy(address_book[record_count].name, name);
-    strcpy(address_book[record_count].surname, surname);
-    strcpy(address_book[record_count].studentId, studentId);
-    address_book[record_count].id = id++;
-    record_count++; */
 
     log_change("ADD", &new_record);
 
