@@ -100,7 +100,9 @@ void process_command(int client_sock, Command *cmd)
             strcpy(response, "Authentication failed\n");
         break;
     case CMD_CLOSE:
-        printf("Closing connection.\n");
+        printf("Closing connection with %s.\n", cmd->pid);
+        memset(response, 0, sizeof(response));
+        send_response(client_sock, "Connection closed cleanly\n");
         break;
     default:
         strcpy(response, "Invalid command.\nPlease enter the correct number.\n");

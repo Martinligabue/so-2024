@@ -119,7 +119,6 @@ void handle_commands(int sock)
     } while (cmd.type != CMD_CLOSE);
 
     close(sock);
-    printf("Closed connection with no error\n");
 }
 
 int main()
