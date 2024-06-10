@@ -255,7 +255,7 @@ void addDefaults()
     fd = fopen(RUBRICA, "r");
     if (fd == NULL)
     {
-        perror("Error opening file!\n");
+        perror("Default address book is missing, we'll start empty.\n"); // TODO: testare se dà problemi strani, ma non direi
         return;
     }
 
