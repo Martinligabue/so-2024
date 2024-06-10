@@ -21,13 +21,26 @@ void signal_handler(int server_sock)
     printf("\nSignal received, closing socket...\n");
     close(server_sock);
     printf("Saving address book\n");
-    // TODO: apri file sola scrittura
-    // TODO: crea comando con sub 4
     Command mockCmd;
     strcpy(mockCmd.subinstruction, "4");
     char mockResponse[BUFFER_SIZE] = {0};
     query_address_book(mockCmd.data, mockCmd.subinstruction, mockResponse);
-    //TODO: print response to file
+
+    FILE *file = fopen("res/new_address_book.csv", "w"); // truncates the file to 0, then writes to it
+    if (file == NULL)
+    {
+        perror("Error opening file");
+        exit(EXIT_FAILURE);
+    }
+
+    if (fprintf(file, "%s", mockResponse) < 0)
+    {
+        perror("Error writing to file");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+    fclose(file);
+
     printf("Done! :)\n");
     exit(EXIT_SUCCESS);
 }
