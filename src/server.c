@@ -186,7 +186,11 @@ void accept_client_connections(int server_sock)
         if (client_sock == -1)
         {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
+            {
+                // No more incoming connections for now, sleep for a while and then continue the loop
+                sleep(1);
+                continue;
+            }
             else
             {
                 perror("accept");
