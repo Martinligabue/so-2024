@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <arpa/inet.h>
 #include <signal.h>
 #include "../inc/common.h"
@@ -178,12 +179,42 @@ void accept_client_connections(int server_sock)
     struct sockaddr_in client_addr;
     socklen_t client_len = sizeof(client_addr);
 
-    while ((client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &client_len)) > 0)
+    while (1)
     {
+        client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &client_len);
+
+        if (client_sock == -1)
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+            else
+            {
+                perror("accept");
+                exit(EXIT_FAILURE);
+            }
+        }
+
         handle_client(client_sock);
     }
 }
+int set_socket_non_blocking(int socket_fd)
+{
+    int flags = fcntl(socket_fd, F_GETFL, 0);
+    if (flags == -1)
+    {
+        perror("fcntl");
+        return -1;
+    }
 
+    flags |= O_NONBLOCK;
+    if (fcntl(socket_fd, F_SETFL, flags) == -1)
+    {
+        perror("fcntl");
+        return -1;
+    }
+
+    return 0;
+}
 int main()
 {
     int server_sock;
@@ -192,7 +223,13 @@ int main()
     addDefaults(); // Add default records to the address book
 
     setup_server(&server_sock, &server_addr);
-
+    int result = set_socket_non_blocking(server_sock);
+    printf("result: %d\n", result);
+    if (result == -1)
+    {
+        perror("Error setting socket to non-blocking");
+        exit(EXIT_FAILURE);
+    }
     signal(SIGINT, signal_handler);
     printf("Server is running on %s:%d and pid %d ...\n", ADDRESS, PORT, getpid());
 
