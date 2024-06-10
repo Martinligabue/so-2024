@@ -187,7 +187,7 @@ void accept_client_connections(int server_sock)
         {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
             {
-                // No more incoming connections for now, sleep for a while and then continue the loop
+                // To avoid checking evry microsecond, sleep 1 sec, ez
                 sleep(1);
                 continue;
             }
