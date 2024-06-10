@@ -36,6 +36,7 @@ clean:
 	rm -f $(OBJDIR)/*.o
 	rm -f $(BINDIR)/server $(BINDIR)/client
 	rm -f $(LOGDIR)/*
+	rm -f res/new_address_book.csv
 
 run:
 	$(BINDIR)/server
