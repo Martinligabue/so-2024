@@ -20,6 +20,14 @@ void signal_handler(int server_sock)
 {
     printf("\nSignal received, closing socket...\n");
     close(server_sock);
+    printf("Saving address book\n");
+    // TODO: apri file sola scrittura
+    // TODO: crea comando con sub 4
+    Command mockCmd;
+    strcpy(mockCmd.subinstruction, "4");
+    char mockResponse[BUFFER_SIZE] = {0};
+    query_address_book(mockCmd.data, mockCmd.subinstruction, mockResponse);
+    //TODO: print response to file
     printf("Done! :)\n");
     exit(EXIT_SUCCESS);
 }

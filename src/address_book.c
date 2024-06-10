@@ -99,7 +99,7 @@ void query_address_book(char *query, char *subquery, char *response)
             if (strcmp(address_book[i].studentId, query) == 0)
                 concatenateResults(buffer, bufferTemp, i, address_book);
         }
-        else if ((strcmp(subquery, "4" == 0) && (address_book[i].name != "")) //TODO: non testato
+        else if ((strcmp(subquery, "4") == 0) && (address_book[i].name[0] != '\0')) //TODO: non testato
         {
             sprintf(bufferTemp, "%s,%s,%s\n",
             address_book[i].name,
