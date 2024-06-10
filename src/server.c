@@ -9,194 +9,148 @@
 #include "../inc/address_book.h"
 #include "../inc/auth.h"
 
-/*Sends a response message to the client.*/
-void send_response(int client_sock, const char *response)
+#define MAX_CLIENTS 10
+
+int main()
 {
-    write(client_sock, response, strlen(response));
-}
-
-/*Signal handler for clean server shutdown.*/
-void signal_handler(int server_sock)
-{
-    printf("\nSignal received, closing socket...\n");
-    close(server_sock);
-    printf("Saving address book\n");
-    Command mockCmd;
-    strcpy(mockCmd.subinstruction, "4");
-    char mockResponse[BUFFER_SIZE] = {0};
-    query_address_book(mockCmd.data, mockCmd.subinstruction, mockResponse);
-
-    FILE *file = fopen("res/new_address_book.csv", "w"); // truncates the file to 0, then writes to it
-    if (file == NULL)
-    {
-        perror("Error opening file");
-        exit(EXIT_FAILURE);
-    }
-
-    if (fprintf(file, "%s", mockResponse) < 0)
-    {
-        perror("Error writing to file");
-        fclose(file);
-        exit(EXIT_FAILURE);
-    }
-    fclose(file);
-
-    printf("Done! :)\n");
-    exit(EXIT_SUCCESS);
-}
-
-/*Checks if a client with a given PID is allowed by reading from allowedClients.txt.
-Returns 1 if allowed, 0 otherwise.*/
-int is_client_allowed(char *pid)
-{
-    FILE *fdAllowedClients = fopen(ALLOWED_CLIENTS_FILE, "r");
-    if (fdAllowedClients == NULL)
-    {
-        perror("Error opening allowedClients.txt");
-        return EXIT_FAILURE;
-    }
-
-    char line[256];
-    int allowed = 0;
-    while (fgets(line, sizeof(line), fdAllowedClients))
-    {
-        line[strcspn(line, "\n")] = '\0';
-        if (strcmp(line, pid) == 0)
-        {
-            allowed = 1;
-            break;
-        }
-    }
-    fclose(fdAllowedClients);
-    return allowed;
-}
-
-/*Processes a single command from the client and sends appropriate responses to the client.*/
-void process_command(int client_sock, Command *cmd)
-{
-    printf("Received command: %d\n", cmd->type);
-    printf("Received data: %s\n", cmd->data);
-
-    char response[BUFFER_SIZE] = {0};
-
-    // check allowedclients.txt for pid
-    fflush(stdout);
-    if ((cmd->type == CMD_ADD || cmd->type == CMD_MODIFY || cmd->type == CMD_DELETE))
-    {
-        if (is_client_allowed(cmd->pid) == 0) // se non ha trovato il pid, è ancora 0
-        {
-            send_response(client_sock, "Authentication required\n");
-            return;
-        }
-    }
-    // If we are here, we are authenticated, or we don't need to be
-    switch (cmd->type)
-    {
-    case CMD_QUERY:
-        query_address_book(cmd->data, cmd->subinstruction, response);
-        break;
-    case CMD_ADD:
-        add_record(cmd->data, response);
-        break;
-    case CMD_MODIFY:
-        modify_record(cmd->data, response);
-        break;
-    case CMD_DELETE:
-        delete_record(cmd->data, response);
-        break;
-    case CMD_AUTH:
-        if (authenticate(cmd->data))
-        {
-            FILE *fd = fopen(ALLOWED_CLIENTS_FILE, "a");
-            if (fd == NULL)
-            {
-                perror("Error opening file!\n");
-                return;
-            }
-            fprintf(fd, "%s\n", cmd->pid);
-            fclose(fd);
-            send_response(client_sock, "Authentication successful\n");
-        }
-        else
-            strcpy(response, "Authentication failed\n");
-        break;
-    case CMD_CLOSE:
-        printf("Closing connection with %s.\n", cmd->pid);
-        memset(response, 0, sizeof(response));
-        send_response(client_sock, "Connection closed cleanly\n");
-        break;
-    default:
-        strcpy(response, "Invalid command.\nPlease enter the correct number.\n");
-        break;
-    }
-    send_response(client_sock, response);
-    memset(response, 0, sizeof(response));
-}
-
-/*Handles communication with a single client */
-void handle_client(int client_sock)
-{
+    int server_sock, client_sock, max_clients = MAX_CLIENTS;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    int client_sockets[max_clients];
+    fd_set read_fds, active_fds;
     Command cmd;
     ssize_t bytes_read;
 
-    while ((bytes_read = read(client_sock, &cmd, sizeof(Command))) > 0)
-        process_command(client_sock, &cmd);
-}
+    addDefaults(); // Add default records to the address book
 
-/* Sets up the server socket and binds it to the specified address and port.*/
-void setup_server(int *server_sock, struct sockaddr_in *server_addr)
-{
-    if ((*server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    // Create socket
+    if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
 
-    server_addr->sin_family = AF_INET;
-    server_addr->sin_addr.s_addr = INADDR_ANY;
-    server_addr->sin_port = htons(PORT);
+    // Set socket to non-blocking mode
+    if (fcntl(server_sock, F_SETFL, O_NONBLOCK) < 0)
+    {
+        perror("Failed to set server socket to non-blocking mode");
+        close(server_sock);
+        exit(EXIT_FAILURE);
+    }
 
-    if (bind(*server_sock, (struct sockaddr *)server_addr, sizeof(*server_addr)) < 0)
+    // Bind socket to address and port
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
+    if (bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
         perror("Bind failed");
-        close(*server_sock);
+        close(server_sock);
         exit(EXIT_FAILURE);
     }
 
-    if (listen(*server_sock, 5) < 0)
+    // Listen for connections
+    if (listen(server_sock, 5) < 0)
     {
         perror("Listen failed");
-        close(*server_sock);
+        close(server_sock);
         exit(EXIT_FAILURE);
     }
-}
 
-/*Accepts client connections in a loop.*/
-void accept_client_connections(int server_sock)
-{
-    int client_sock;
-    struct sockaddr_in client_addr;
-    socklen_t client_len = sizeof(client_addr);
-
-    while ((client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &client_len)) > 0)
-    {
-        handle_client(client_sock);
-    }
-}
-
-int main()
-{
-    int server_sock;
-    struct sockaddr_in server_addr;
-
-    addDefaults(); // Add default records to the address book
-
-    setup_server(&server_sock, &server_addr);
-
-    signal(SIGINT, signal_handler);
     printf("Server is running on %s:%d and pid %d ...\n", ADDRESS, PORT, getpid());
 
-    accept_client_connections(server_sock);
+    // Initialize client sockets array
+    for (int i = 0; i < max_clients; i++)
+    {
+        client_sockets[i] = -1;
+    }
+
+    FD_ZERO(&active_fds);
+    FD_SET(server_sock, &active_fds);
+
+    while (1)
+    {
+        read_fds = active_fds;
+
+        // Wait for activity on any socket
+        if (select(FD_SETSIZE, &read_fds, NULL, NULL, NULL) < 0)
+        {
+            perror("Select failed");
+            break;
+        }
+
+        // Check if there is a new connection
+        if (FD_ISSET(server_sock, &read_fds))
+        {
+            client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &client_len);
+            if (client_sock < 0)
+            {
+                perror("Accept failed");
+                continue;
+            }
+
+            // Add new client socket to the array
+            for (int i = 0; i < max_clients; i++)
+            {
+                if (client_sockets[i] == -1)
+                {
+                    client_sockets[i] = client_sock;
+                    break;
+                }
+            }
+
+            // Add new client socket to the active set
+            FD_SET(client_sock, &active_fds);
+
+            // Set new client socket to non-blocking mode
+            if (fcntl(client_sock, F_SETFL, O_NONBLOCK) < 0)
+            {
+                perror("Failed to set client socket to non-blocking mode");
+                close(client_sock);
+                continue;
+            }
+
+            printf("New connection, socket fd is %d, ip is : %s, port : %d\n", client_sock, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+        }
+
+        // Handle data from clients
+        for (int i = 0; i < max_clients; i++)
+        {
+            if (client_sockets[i] != -1 && FD_ISSET(client_sockets[i], &read_fds))
+            {
+                bytes_read = read(client_sockets[i], &cmd, sizeof(Command));
+                if (bytes_read > 0)
+                {
+                    process_command(client_sockets[i], &cmd);
+                }
+                else if (bytes_read == 0)
+                {
+                    // Connection closed by client
+                    printf("Client disconnected, socket fd is %d\n", client_sockets[i]);
+                    close(client_sockets[i]);
+                    FD_CLR(client_sockets[i], &active_fds);
+                    client_sockets[i] = -1;
+                }
+                else
+                {
+                    // Error reading from client
+                    perror("Read failed");
+                    close(client_sockets[i]);
+                    FD_CLR(client_sockets[i], &active_fds);
+                    client_sockets[i] = -1;
+                }
+            }
+        }
+    }
+
+    // Close all client sockets
+    for (int i = 0; i < max_clients; i++)
+    {
+        if (client_sockets[i] != -1)
+        {
+            close(client_sockets[i]);
+        }
+    }
 
     close(server_sock);
     return 0;
