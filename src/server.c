@@ -8,6 +8,7 @@
 #include "../inc/common.h"
 #include "../inc/address_book.h"
 #include "../inc/auth.h"
+#include <sys/select.h>
 
 #define MAX_CLIENTS 10
 
