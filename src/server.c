@@ -76,7 +76,6 @@ int is_client_allowed(char *pid)
 void process_command(int client_sock, Command *cmd)
 {
     printf("Received command: %d\n", cmd->type);
-    printf("Received data: %s\n", cmd->data);
 
     char response[BUFFER_SIZE] = {0};
 
@@ -201,6 +200,7 @@ void accept_client_connections(int server_sock)
         handle_client(client_sock);
     }
 }
+
 int set_socket_non_blocking(int socket_fd)
 {
     int flags = fcntl(socket_fd, F_GETFL, 0);
@@ -214,22 +214,23 @@ int set_socket_non_blocking(int socket_fd)
     if (fcntl(socket_fd, F_SETFL, flags) == -1)
     {
         perror("fcntl");
-        return -1;
+        return EXIT_FAILURE;
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
+
 int main()
 {
+
+    addDefaults(); // Adds default records to the address book
+
     int server_sock;
     struct sockaddr_in server_addr;
 
-    addDefaults(); // Add default records to the address book
-
     setup_server(&server_sock, &server_addr);
     int result = set_socket_non_blocking(server_sock);
-    printf("result: %d\n", result);
-    if (result == -1)
+    if (result == EXIT_FAILURE)
     {
         perror("Error setting socket to non-blocking");
         exit(EXIT_FAILURE);
@@ -240,5 +241,5 @@ int main()
     accept_client_connections(server_sock);
 
     close(server_sock);
-    return 0;
+    return EXIT_SUCCESS;
 }
